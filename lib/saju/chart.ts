@@ -22,7 +22,7 @@ export const topicValues = [
 
 export type Topic = (typeof topicValues)[number];
 
-export const MIN_BIRTH_DATE = "1950-01-01";
+export const MIN_BIRTH_DATE = "1900-01-01";
 export const MAX_BIRTH_DATE = "2026-12-31";
 
 export const topicLabels: Record<Topic, string> = {
@@ -133,7 +133,7 @@ export function validateInput(raw: SajuInput): SajuInput {
     throw new InputError("실제로 존재하는 날짜를 입력해주세요.", "date");
   if (date < MIN_BIRTH_DATE || date > MAX_BIRTH_DATE)
     throw new InputError(
-      "1950년 1월 1일부터 2026년 12월 31일까지의 날짜를 지원합니다.",
+      "1900년 1월 1일부터 2026년 12월 31일까지의 날짜를 지원합니다.",
       "date",
     );
   if (raw.unknownTime !== undefined && typeof raw.unknownTime !== "boolean")

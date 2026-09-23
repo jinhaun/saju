@@ -35,8 +35,8 @@ test("자유 고민은 정확히 200자까지 허용한다", () => {
   assert.equal(validateInput({ ...base, question }).question, question);
 });
 
-test("1950년 1월 1일부터 2026년 12월 31일까지 계산할 수 있다", () => {
-  for (const date of ["1950-01-01", "2026-12-31"]) {
+test("1900년 1월 1일부터 2026년 12월 31일까지 계산할 수 있다", () => {
+  for (const date of ["1900-01-01", "2026-12-31"]) {
     assert.equal(validateInput({ ...base, date }).date, date);
     assert.equal(calculate({ ...base, date }).pillars.length, 4);
   }
@@ -80,7 +80,7 @@ test("23시에 다음 날의 일주로 바뀐다", () => {
 for (const [changes, message] of [
   [{ date: "2001-02-29" }, "존재"],
   [{ date: "2000-02-30" }, "존재"],
-  [{ date: "1949-12-31" }, "1950"],
+  [{ date: "1899-12-31" }, "1900"],
   [{ date: "2027-01-01" }, "2026"],
   [{ time: "24:00" }, "시각"],
   [{ time: "12:60" }, "시각"],

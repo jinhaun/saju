@@ -46,7 +46,7 @@ Google 로그인한 사용자의 성공한 사주 해석 결과를 Supabase Post
 | `id` | `bigint identity` | 내부 기본키 |
 | `request_id` | `uuid` | 같은 저장 요청의 중복 삽입 방지 |
 | `user_id` | `uuid` | `auth.users(id)` 참조, 계정 삭제 시 함께 삭제 |
-| `birth_date` | `date` | 사용자가 입력한 양력 생년월일, 1950-01-01부터 2026-12-31까지 |
+| `birth_date` | `date` | 사용자가 입력한 양력 생년월일, 1900-01-01부터 2026-12-31까지 |
 | `birth_time` | `time`, nullable | 사용자가 입력한 출생지 기준 시각. `null`은 출생 시각을 모름 |
 | `topic` | `text` | 허용된 여섯 주제 중 하나 |
 | `question` | `text` | 선택 사항, 최대 200자 |
@@ -61,7 +61,7 @@ Google 로그인한 사용자의 성공한 사주 해석 결과를 Supabase Post
 - `id`는 기본키입니다.
 - `(user_id, request_id)`는 유일해야 하며 재시도 시 같은 결과가 두 번 저장되지 않습니다.
 - `user_id`는 `auth.users(id)`를 참조하고 `on delete cascade`를 사용합니다.
-- `birth_date`는 `date '1950-01-01'` 이상, `date '2026-12-31'` 이하 검사 조건을 둡니다.
+- `birth_date`는 `date '1900-01-01'` 이상, `date '2026-12-31'` 이하 검사 조건을 둡니다.
 - `birth_time`은 사용자가 시각을 모르면 `null`을 허용합니다.
 - `topic`은 `relationship`, `career`, `wealth`, `social`, `strengths`, `yearly`만 허용합니다.
 - `question`은 빈 값 또는 200자 이하만 허용합니다.

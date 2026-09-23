@@ -60,6 +60,17 @@ test("지원 범위의 끝 날짜에서도 앞선 후보를 찾아 반환한다"
   assert.ok(result.matches.every((match) => match.date < "2026-12-31"));
 });
 
+test("1900년 시작 날짜에서도 뒤쪽의 닮은 후보를 찾아 반환한다", () => {
+  const result = findSimilarSaju({
+    date: "1900-01-01",
+    time: "12:00",
+    unknownTime: false,
+  });
+
+  assert.equal(result.matches.length, 5);
+  assert.ok(result.matches.every((match) => match.date > "1900-01-01"));
+});
+
 test("비슷한 사주 API는 서버 계산 결과를 반환한다", async () => {
   const response = await POST(
     new Request("http://localhost/api/similar-saju", {

@@ -98,7 +98,7 @@ export default function SimilarSajuForm() {
         <p className="step-label">비슷한 사주 찾기</p>
         <h2 id="similar-saju-title">나와 닮은 사주를 찾아보세요.</h2>
         <p className="form-intro">
-          실제 이용자가 아니라 1950년부터 2026년까지의 달력 날짜를 비교합니다.
+          실제 이용자가 아니라 1900년부터 2026년까지의 달력 날짜를 비교합니다.
           같은 일주 중 다른 기둥과 오행 구성이 가까운 다섯 날짜를 보여드려요.
         </p>
       </div>

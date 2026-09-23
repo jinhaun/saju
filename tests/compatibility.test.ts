@@ -45,18 +45,18 @@ test("두 사람의 입력 순서를 바꿔도 점수가 같다", () => {
 
 test("지원 범위의 시작일과 마지막 날을 허용한다", () => {
   const result = compareCompatibility(
-    { date: "1950-01-01", unknownTime: true },
+    { date: "1900-01-01", unknownTime: true },
     { date: "2026-12-31", unknownTime: true },
   );
 
   assert.deepEqual(result.people.map((person) => person.usedPillarCount), [3, 3]);
 });
 
-for (const date of ["1949-12-31", "2027-01-01"]) {
+for (const date of ["1899-12-31", "2027-01-01"]) {
   test(`지원 범위 밖 날짜 ${date}를 거절한다`, () => {
     assert.throws(
       () => compareCompatibility({ ...first, date }, second),
-      /1950년 1월 1일부터 2026년 12월 31일/,
+      /1900년 1월 1일부터 2026년 12월 31일/,
     );
   });
 }
@@ -67,4 +67,3 @@ test("시간을 안다고 선택했으면 올바른 시간이 필요하다", () 
     /시각/,
   );
 });
-
