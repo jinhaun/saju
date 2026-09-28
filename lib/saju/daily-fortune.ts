@@ -265,7 +265,7 @@ export async function generateDailyFortune(
         schema: DAILY_FORTUNE_SCHEMA,
       },
     }),
-    signal: AbortSignal.timeout(30_000),
+    signal: AbortSignal.timeout(60_000),
   });
 
   if (!response.ok) {

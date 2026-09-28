@@ -10,6 +10,8 @@ import {
   hasSupabaseAdminConfig,
 } from "../../../lib/supabase/admin";
 
+export const maxDuration = 120;
+
 export async function GET() {
   const user = await getAuthenticatedUser();
   if (!user) {
