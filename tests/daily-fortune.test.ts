@@ -138,7 +138,7 @@ test("프롬프트는 생년월일·출생 시각·비밀값 없이 계산된 �
 });
 
 test(
-  "Gemini 요청에는 원 생년월일·시각·API 키가 본문에 포함되지 않는다",
+  "데이터베이스 시각을 분 단위로 정리하고 Gemini 본문에는 개인정보를 넣지 않는다",
   { concurrency: false },
   async () => {
     const originalApiKey = process.env.GEMINI_API_KEY;
@@ -149,7 +149,7 @@ test(
       const result = await generateDailyFortune(
         {
           birthDate: "2005-12-23",
-          birthTime: "08:37",
+          birthTime: "08:37:00",
           unknownBirthTime: false,
         },
         "2026-09-29",
@@ -172,4 +172,3 @@ test(
     }
   },
 );
-

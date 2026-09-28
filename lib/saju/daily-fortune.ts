@@ -227,7 +227,7 @@ export function buildDailyFortunePrompt(
 function profileInput(profile: DailyFortuneProfile): SajuInput {
   return {
     date: profile.birthDate,
-    time: profile.birthTime || "",
+    time: profile.birthTime?.slice(0, 5) || "",
     calendar: "solar",
     topic: "yearly",
     unknownTime: profile.unknownBirthTime,
