@@ -17,6 +17,10 @@ import type { SajuReading } from "../lib/saju/reading";
 import type { SaveReadingRequest } from "../lib/saju/saved-reading";
 import { toReusedBirthInput } from "../lib/saju/reused-birth-input";
 import { buildCompatibleSajuProfile } from "../lib/saju/compatible-profile";
+import {
+  downloadCompatibleSharePng,
+  renderCompatibleSharePng,
+} from "../lib/saju/compatible-share";
 import { useReusedBirthInput } from "./reused-birth-input-context";
 
 const topicDescriptions: Record<Topic, string> = {
@@ -29,6 +33,7 @@ const topicDescriptions: Record<Topic, string> = {
 };
 
 type SaveStatus = "idle" | "guest" | "saving" | "saved" | "error" | "auth";
+type CompatibleShareStatus = "idle" | "preparing" | "saved" | "shared" | "cancelled" | "error";
 
 export default function SajuForm({ isAuthenticated }: { isAuthenticated: boolean }) {
   const { reuseBirthInput } = useReusedBirthInput();
@@ -48,9 +53,53 @@ export default function SajuForm({ isAuthenticated }: { isAuthenticated: boolean
   const [reusedSavedReading, setReusedSavedReading] = useState(false);
   const [todayFortuneReady, setTodayFortuneReady] = useState(false);
   const [todayFortuneMessage, setTodayFortuneMessage] = useState("");
+  const [compatibleShareStatus, setCompatibleShareStatus] = useState<CompatibleShareStatus>("idle");
   const formRef = useRef<HTMLFormElement>(null);
   const resultRef = useRef<HTMLElement>(null);
   const compatibleProfile = chart ? buildCompatibleSajuProfile(chart) : null;
+
+  async function handleShareCompatible() {
+    if (!compatibleProfile || compatibleShareStatus === "preparing") return;
+    setCompatibleShareStatus("preparing");
+
+    try {
+      const blob = await renderCompatibleSharePng(compatibleProfile);
+      const file = new File([blob], "나와-잘-맞는-사주.png", { type: "image/png" });
+      const shareData: ShareData = {
+        title: "나와 잘 맞는 사주",
+        text: "나와 잘 맞는 오행과 관계의 조화를 살펴보세요.",
+        files: [file],
+      };
+
+      if (typeof navigator.share === "function" && navigator.canShare?.(shareData)) {
+        try {
+          await navigator.share(shareData);
+          setCompatibleShareStatus("shared");
+        } catch (caught) {
+          if (caught instanceof DOMException && caught.name === "AbortError") {
+            setCompatibleShareStatus("cancelled");
+            return;
+          }
+          throw caught;
+        }
+        return;
+      }
+
+      downloadCompatibleSharePng(blob);
+      setCompatibleShareStatus("saved");
+    } catch {
+      setCompatibleShareStatus("error");
+    }
+  }
+
+  const compatibleShareMessage = {
+    idle: "",
+    preparing: "관계의 조화 이미지를 준비하고 있습니다.",
+    saved: "관계의 조화 이미지를 PNG 파일로 저장했습니다.",
+    shared: "관계의 조화 이미지를 공유했습니다.",
+    cancelled: "공유를 취소했습니다. 원하실 때 다시 눌러 주세요.",
+    error: "이미지를 만들지 못했습니다. 잠시 후 다시 시도해 주세요.",
+  }[compatibleShareStatus];
 
   async function saveResult(payload: SaveReadingRequest) {
     setSaveStatus("saving");
@@ -116,6 +165,7 @@ export default function SajuForm({ isAuthenticated }: { isAuthenticated: boolean
       setReusedSavedReading(false);
       setTodayFortuneReady(false);
       setTodayFortuneMessage("");
+      setCompatibleShareStatus("idle");
       setIsLoading(true);
       window.setTimeout(() => resultRef.current?.focus(), 0);
 
@@ -443,10 +493,36 @@ export default function SajuForm({ isAuthenticated }: { isAuthenticated: boolean
                 </p>
               </div>
 
-              <p className="compatible-elements-summary">
-                <strong>잘 맞는 오행</strong>
-                <span>{compatibleProfile.recommendations.map((item) => item.element).join(" · ")}</span>
-              </p>
+              <div className="compatible-elements-summary">
+                <p className="compatible-elements-text">
+                  <strong>잘 맞는 오행</strong>
+                  <span>{compatibleProfile.recommendations.map((item) => item.element).join(" · ")}</span>
+                </p>
+                <button
+                  type="button"
+                  className="compatible-share-button"
+                  disabled={compatibleShareStatus === "preparing"}
+                  onClick={() => void handleShareCompatible()}
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="18" cy="5" r="2.5" />
+                    <circle cx="6" cy="12" r="2.5" />
+                    <circle cx="18" cy="19" r="2.5" />
+                    <path d="m8.2 10.8 7.6-4.4M8.2 13.2l7.6 4.4" />
+                  </svg>
+                  {compatibleShareStatus === "preparing" ? "이미지 준비 중..." : "공유하기"}
+                </button>
+              </div>
+
+              {compatibleShareMessage && (
+                <p
+                  className={`compatible-share-status compatible-share-${compatibleShareStatus}`}
+                  role="status"
+                  aria-live="polite"
+                >
+                  {compatibleShareMessage}
+                </p>
+              )}
 
               <div className="compatible-saju-grid">
                 {compatibleProfile.recommendations.map((item) => (

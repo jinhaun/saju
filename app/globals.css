@@ -807,6 +807,7 @@ button[type="submit"]:disabled {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
   gap: 8px 14px;
   margin: 16px 0 0;
   padding: 11px 14px;
@@ -815,17 +816,73 @@ button[type="submit"]:disabled {
   background: rgba(245, 236, 216, 0.68);
 }
 
-.compatible-elements-summary strong {
+.compatible-elements-text {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin: 0;
+}
+
+.compatible-elements-text strong {
   color: var(--seal);
   font-size: 13px;
 }
 
-.compatible-elements-summary span {
+.compatible-elements-text span {
   color: var(--book-blue);
   font-size: 19px;
   font-weight: 800;
   letter-spacing: 0.08em;
 }
+
+.compatible-share-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 9px 14px;
+  color: var(--book-blue);
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  background: #fffdf7;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.compatible-share-button svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.compatible-share-button:hover {
+  color: #fffdf7;
+  border-color: var(--book-blue);
+  background: var(--book-blue);
+}
+
+.compatible-share-button:disabled {
+  color: var(--muted);
+  border-color: var(--border);
+  background: #eee9df;
+  cursor: wait;
+}
+
+.compatible-share-status {
+  margin: 9px 2px 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.compatible-share-error { color: var(--seal); }
 
 .compatible-saju-grid {
   display: grid;
@@ -1647,6 +1704,8 @@ button[type="submit"]:hover,
   .compatibility-day-pillars,
   .compatibility-insights,
   .compatible-saju-grid { grid-template-columns: 1fr; }
+
+  .compatible-share-button { width: 100%; }
   .topic-card { min-height: 84px; }
   .result-heading { display: grid; }
   .topic-badge { width: fit-content; }
