@@ -45,6 +45,9 @@ export default function SajuForm({ isAuthenticated }: { isAuthenticated: boolean
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [saveError, setSaveError] = useState("");
   const [savedId, setSavedId] = useState("");
+  const [reusedSavedReading, setReusedSavedReading] = useState(false);
+  const [todayFortuneReady, setTodayFortuneReady] = useState(false);
+  const [todayFortuneMessage, setTodayFortuneMessage] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
   const resultRef = useRef<HTMLElement>(null);
   const compatibleProfile = chart ? buildCompatibleSajuProfile(chart) : null;
@@ -58,7 +61,12 @@ export default function SajuForm({ isAuthenticated }: { isAuthenticated: boolean
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const result = (await response.json()) as { id?: string; message?: string };
+      const result = (await response.json()) as {
+        id?: string;
+        message?: string;
+        todayFortuneReady?: boolean;
+        todayFortuneMessage?: string;
+      };
       if (!response.ok || !result.id) {
         if (response.status === 401) {
           setSaveStatus("auth");
@@ -68,6 +76,9 @@ export default function SajuForm({ isAuthenticated }: { isAuthenticated: boolean
         throw new Error(result.message || "결과를 저장하지 못했습니다.");
       }
       setSavedId(result.id);
+      setReusedSavedReading(false);
+      setTodayFortuneReady(result.todayFortuneReady === true);
+      setTodayFortuneMessage(result.todayFortuneMessage || "");
       setSaveStatus("saved");
     } catch (caught) {
       setSaveStatus("error");
@@ -102,8 +113,46 @@ export default function SajuForm({ isAuthenticated }: { isAuthenticated: boolean
       setSaveStatus("idle");
       setSaveError("");
       setSavedId("");
+      setReusedSavedReading(false);
+      setTodayFortuneReady(false);
+      setTodayFortuneMessage("");
       setIsLoading(true);
       window.setTimeout(() => resultRef.current?.focus(), 0);
+
+      if (isAuthenticated) {
+        const matchResponse = await fetch("/api/readings/match", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(input),
+        });
+        const match = (await matchResponse.json()) as {
+          matched?: boolean;
+          id?: string;
+          chart?: SajuChart;
+          reading?: SajuReading;
+          todayFortuneReady?: boolean;
+          todayFortuneMessage?: string;
+          message?: string;
+        };
+        if (!matchResponse.ok) {
+          if (matchResponse.status === 401) {
+            setSaveStatus("auth");
+            setSaveError(match.message || "로그인이 만료되었습니다. 다시 로그인해 주세요.");
+            return;
+          }
+          throw new Error(match.message || "저장된 사주를 확인하지 못했습니다. 다시 시도해 주세요.");
+        }
+        if (match.matched && match.id && match.chart && match.reading) {
+          setChart(match.chart);
+          setReading(match.reading);
+          setSavedId(match.id);
+          setReusedSavedReading(true);
+          setTodayFortuneReady(match.todayFortuneReady === true);
+          setTodayFortuneMessage(match.todayFortuneMessage || "");
+          setSaveStatus("saved");
+          return;
+        }
+      }
 
       const response = await fetch("/api/reading", {
         method: "POST",
@@ -337,11 +386,25 @@ export default function SajuForm({ isAuthenticated }: { isAuthenticated: boolean
               )}
               {saveStatus === "saved" && (
                 <>
-                  <strong>내 결과에 저장됐습니다.</strong>
-                  <p>새로고침하거나 다시 로그인해도 이 해석을 볼 수 있어요.</p>
-                  <Link className="inline-link" href={savedId ? `/readings/${savedId}` : "/readings"}>
-                    저장된 결과 보기
-                  </Link>
+                  <strong>
+                    {reusedSavedReading
+                      ? "입력하신 정보와 같은 저장된 사주를 불러왔습니다."
+                      : "새 사주를 내 결과에 저장했습니다."}
+                  </strong>
+                  <p>
+                    {todayFortuneMessage ||
+                      (todayFortuneReady
+                        ? "이 사주에 맞는 오늘의 운세도 준비됐습니다."
+                        : "오늘의 운세 화면에서 바로 불러올 수 있습니다.")}
+                  </p>
+                  <div className="inline-link-row">
+                    <Link className="inline-link" href={savedId ? `/readings/${savedId}` : "/readings"}>
+                      저장된 결과 보기
+                    </Link>
+                    <Link className="inline-link" href="/today">
+                      오늘의 운세 보기
+                    </Link>
+                  </div>
                 </>
               )}
               {(saveStatus === "error" || saveStatus === "auth") && (

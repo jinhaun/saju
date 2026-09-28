@@ -12,6 +12,26 @@ export type SaveReadingRequest = {
   reading: SajuReading;
 };
 
+export function parseReadingLookupRequest(raw: unknown): SajuInput {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    throw new Error("불러올 사주 정보를 확인해 주세요.");
+  }
+
+  const data = raw as Record<string, unknown>;
+  if (data.unknownTime !== undefined && typeof data.unknownTime !== "boolean") {
+    throw new Error("출생 시각 선택을 확인해주세요.");
+  }
+
+  return validateInput({
+    date: typeof data.date === "string" ? data.date : "",
+    time: typeof data.time === "string" ? data.time : "",
+    calendar: data.calendar as "solar",
+    topic: data.topic as Topic,
+    question: data.question as string | undefined,
+    unknownTime: data.unknownTime === true,
+  });
+}
+
 export type SavedReadingListItem = {
   id: string;
   birthDate: string;
@@ -48,24 +68,7 @@ export function parseSaveReadingRequest(raw: unknown): SaveReadingRequest {
     throw new Error("저장할 입력 내용을 확인해 주세요.");
   }
 
-  const inputData = data.input as Record<string, unknown>;
-  if (
-    inputData.unknownTime !== undefined &&
-    typeof inputData.unknownTime !== "boolean"
-  ) {
-    throw new Error("출생 시각 선택을 확인해주세요.");
-  }
-  const input = validateInput({
-    date: typeof inputData.date === "string" ? inputData.date : "",
-    time: typeof inputData.time === "string" ? inputData.time : "",
-    calendar: inputData.calendar as "solar",
-    topic: inputData.topic as Topic,
-    question:
-      inputData.question === undefined
-        ? undefined
-        : (inputData.question as string),
-    unknownTime: inputData.unknownTime === true,
-  });
+  const input = parseReadingLookupRequest(data.input);
   const reading = parseReading(JSON.stringify(data.reading));
 
   return { requestId: data.requestId, input, reading };

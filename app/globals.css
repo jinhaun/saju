@@ -768,6 +768,11 @@ button[type="submit"]:disabled {
 
 .save-panel p { margin: 4px 0 0; color: var(--muted); }
 .save-panel .inline-link { display: inline-block; margin-top: 10px; }
+.inline-link-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
 .save-saving,
 .save-saved { border-color: #b6cfc4; background: var(--accent-soft); }
 .save-error,

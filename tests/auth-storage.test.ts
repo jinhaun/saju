@@ -4,6 +4,7 @@ import {
   decodeCursor,
   encodeCursor,
   isReadingId,
+  parseReadingLookupRequest,
   parseSaveReadingRequest,
 } from "../lib/saju/saved-reading";
 import type { SajuInput } from "../lib/saju/chart";
@@ -120,6 +121,30 @@ test("정상 저장 요청을 검사하고 허용된 입력만 반환한다", ()
   assert.equal("userId" in parsed, false);
   assert.equal("chart" in parsed.input, false);
   assert.equal("email" in parsed.input, false);
+});
+
+test("저장된 사주 조회 입력은 공백 질문을 정규화하고 허용된 값만 남긴다", () => {
+  const parsed = parseReadingLookupRequest({
+    ...validInput,
+    question: "  저에게 맞는 일의 방향이 궁금해요.  ",
+    userId: "클라이언트가 보낸 사용자 ID",
+    reading: { headline: "조작된 결과" },
+  });
+
+  assert.deepEqual(parsed, { ...validInput, unknownTime: false });
+  assert.equal("userId" in parsed, false);
+  assert.equal("reading" in parsed, false);
+});
+
+test("저장된 사주 조회도 출생 시각과 질문 형식을 검사한다", () => {
+  assert.throws(
+    () => parseReadingLookupRequest({ ...validInput, unknownTime: "yes" }),
+    /출생 시각/,
+  );
+  assert.throws(
+    () => parseReadingLookupRequest({ ...validInput, question: 123 }),
+    /질문은 글자/,
+  );
 });
 
 test("출생 시각을 모르는 저장 요청은 빈 시각과 선택 상태를 유지한다", () => {

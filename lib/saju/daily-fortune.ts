@@ -32,6 +32,30 @@ export type DailyFortuneProfile = {
   unknownBirthTime: boolean;
 };
 
+export type ActivatableDailyFortuneProfile = DailyFortuneProfile & {
+  calendar?: "solar";
+};
+
+export function isSameDailyFortuneProfile(
+  current: {
+    birth_date: string;
+    birth_time: string | null;
+    unknown_birth_time: boolean;
+  } | null,
+  next: ActivatableDailyFortuneProfile,
+) {
+  if (!current) return false;
+  const normalizedCurrentTime = current.birth_time?.slice(0, 5) || null;
+  const normalizedNextTime = next.unknownBirthTime
+    ? null
+    : next.birthTime?.slice(0, 5) || null;
+  return (
+    current.birth_date === next.birthDate &&
+    normalizedCurrentTime === normalizedNextTime &&
+    current.unknown_birth_time === next.unknownBirthTime
+  );
+}
+
 export type FortunePeriod = {
   fortuneDate: string;
   nextRefreshAt: string;

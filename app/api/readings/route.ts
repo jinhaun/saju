@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { calculate, InputError } from "../../../lib/saju/chart";
 import { GEMINI_MODEL } from "../../../lib/saju/reading";
+import { getFortunePeriod } from "../../../lib/saju/daily-fortune";
+import {
+  activateDailyFortuneProfile,
+  DailyFortuneServiceError,
+} from "../../../lib/saju/daily-fortune-service";
 import {
   decodeCursor,
   encodeCursor,
@@ -9,6 +14,12 @@ import {
 } from "../../../lib/saju/saved-reading";
 import { getAuthenticatedUser } from "../../../lib/supabase/auth";
 import { createClient } from "../../../lib/supabase/server";
+import {
+  createAdminClient,
+  hasSupabaseAdminConfig,
+} from "../../../lib/supabase/admin";
+
+export const maxDuration = 300;
 
 function unauthorized() {
   return NextResponse.json(
@@ -17,23 +28,39 @@ function unauthorized() {
   );
 }
 
-async function saveFortuneProfile(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+async function prepareTodayFortune(
   userId: string,
   input: ReturnType<typeof parseSaveReadingRequest>["input"],
 ) {
-  const { error } = await supabase.from("saju_profiles").upsert(
-    {
-      user_id: userId,
-      birth_date: input.date,
-      birth_time: input.unknownTime ? null : input.time,
-      unknown_birth_time: input.unknownTime === true,
-      calendar: "solar",
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "user_id" },
-  );
-  return error;
+  if (!hasSupabaseAdminConfig()) {
+    return {
+      ready: false,
+      message: "오늘의 운세 서버 설정이 아직 완료되지 않았습니다.",
+    };
+  }
+  try {
+    const period = getFortunePeriod();
+    await activateDailyFortuneProfile(
+      createAdminClient(),
+      userId,
+      {
+        birthDate: input.date,
+        birthTime: input.unknownTime ? null : input.time,
+        unknownBirthTime: input.unknownTime === true,
+      },
+      period.fortuneDate,
+    );
+    return { ready: true, message: "오늘의 운세도 준비됐습니다." };
+  } catch (error) {
+    console.error(
+      "Preparing today's fortune failed:",
+      error instanceof DailyFortuneServiceError ? error.code : "unknown error",
+    );
+    return {
+      ready: false,
+      message: "해석은 저장됐지만 오늘의 운세는 화면에서 다시 불러와 주세요.",
+    };
+  }
 }
 
 export async function POST(request: Request) {
@@ -66,20 +93,15 @@ export async function POST(request: Request) {
       .single();
 
     if (!error && data) {
-      const profileError = await saveFortuneProfile(supabase, user.id, input);
-      if (profileError) {
-        console.error("Saving fortune profile failed:", profileError.code);
-        return NextResponse.json(
-          {
-            code: "PROFILE_SAVE_FAILED",
-            message:
-              "해석은 저장됐지만 오늘의 운세 기준 정보를 갱신하지 못했습니다. 저장만 다시 시도해 주세요.",
-          },
-          { status: 503 },
-        );
-      }
+      const today = await prepareTodayFortune(user.id, input);
       return NextResponse.json(
-        { id: String(data.id), createdAt: data.created_at, duplicate: false },
+        {
+          id: String(data.id),
+          createdAt: data.created_at,
+          duplicate: false,
+          todayFortuneReady: today.ready,
+          todayFortuneMessage: today.message,
+        },
         { status: 201 },
       );
     }
@@ -92,22 +114,13 @@ export async function POST(request: Request) {
         .eq("user_id", user.id)
         .maybeSingle();
       if (!existingError && existing) {
-        const profileError = await saveFortuneProfile(supabase, user.id, input);
-        if (profileError) {
-          console.error("Saving fortune profile failed:", profileError.code);
-          return NextResponse.json(
-            {
-              code: "PROFILE_SAVE_FAILED",
-              message:
-                "저장된 해석은 찾았지만 오늘의 운세 기준 정보를 갱신하지 못했습니다. 다시 시도해 주세요.",
-            },
-            { status: 503 },
-          );
-        }
+        const today = await prepareTodayFortune(user.id, input);
         return NextResponse.json({
           id: String(existing.id),
           createdAt: existing.created_at,
           duplicate: true,
+          todayFortuneReady: today.ready,
+          todayFortuneMessage: today.message,
         });
       }
     }

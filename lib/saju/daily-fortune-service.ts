@@ -3,6 +3,8 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   generateDailyFortune,
+  isSameDailyFortuneProfile,
+  type ActivatableDailyFortuneProfile,
   type DailyFortune,
   type DailyFortuneProfile,
 } from "./daily-fortune";
@@ -138,4 +140,60 @@ export async function ensureDailyFortune(
     "DATABASE_ERROR",
     "오늘의 운세를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.",
   );
+}
+
+export async function activateDailyFortuneProfile(
+  supabase: SupabaseClient,
+  userId: string,
+  profile: ActivatableDailyFortuneProfile,
+  fortuneDate: string,
+): Promise<DailyFortuneRecord> {
+  const { data: current, error: currentError } = await supabase
+    .from("saju_profiles")
+    .select("birth_date, birth_time, unknown_birth_time")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (currentError) {
+    throw new DailyFortuneServiceError(
+      "DATABASE_ERROR",
+      "저장된 사주 기준 정보를 확인하지 못했습니다.",
+    );
+  }
+
+  const profileChanged = !isSameDailyFortuneProfile(current, profile);
+  const { error: upsertError } = await supabase.from("saju_profiles").upsert(
+    {
+      user_id: userId,
+      birth_date: profile.birthDate,
+      birth_time: profile.unknownBirthTime ? null : profile.birthTime,
+      unknown_birth_time: profile.unknownBirthTime,
+      calendar: profile.calendar || "solar",
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id" },
+  );
+
+  if (upsertError) {
+    throw new DailyFortuneServiceError(
+      "DATABASE_ERROR",
+      "오늘의 운세 기준 정보를 저장하지 못했습니다.",
+    );
+  }
+
+  if (profileChanged) {
+    const { error: deleteError } = await supabase
+      .from("daily_fortunes")
+      .delete()
+      .eq("user_id", userId)
+      .eq("fortune_date", fortuneDate);
+    if (deleteError) {
+      throw new DailyFortuneServiceError(
+        "DATABASE_ERROR",
+        "새 사주에 맞게 오늘의 운세를 바꾸지 못했습니다.",
+      );
+    }
+  }
+
+  return ensureDailyFortune(supabase, userId, fortuneDate);
 }
