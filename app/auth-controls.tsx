@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { AuthUser } from "../lib/supabase/auth";
+import { getAuthCallbackUrl } from "../lib/supabase/auth-redirect";
 import { createClient } from "../lib/supabase/client";
 
 export default function AuthControls({ user }: { user: AuthUser | null }) {
@@ -19,7 +20,10 @@ export default function AuthControls({ user }: { user: AuthUser | null }) {
       const { error: authError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=/`,
+          redirectTo: getAuthCallbackUrl(
+            window.location.origin,
+            process.env.NEXT_PUBLIC_SITE_URL,
+          ),
         },
       });
       if (authError) throw authError;
@@ -52,6 +56,9 @@ export default function AuthControls({ user }: { user: AuthUser | null }) {
             <span>로그인됨</span>
             <strong>{user.displayName || user.email || "Google 사용자"}</strong>
           </div>
+          <Link className="secondary-link" href="/today">
+            오늘의 운세
+          </Link>
           <Link className="secondary-link" href="/readings">
             내 사주 결과
           </Link>

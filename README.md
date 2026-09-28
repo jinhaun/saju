@@ -17,11 +17,30 @@ npm run dev
 
 ```text
 GEMINI_API_KEY=
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+SUPABASE_SECRET_KEY=
+CRON_SECRET=
 ```
 
+`SUPABASE_SECRET_KEY`는 오늘의 운세를 서버와 예약 작업에서 생성할 때만 사용하는
+비밀 인증값입니다. `CRON_SECRET`은 Vercel이 예약 경로를 호출했다는 것을 확인하는
+16자 이상의 임의 문자열입니다. 두 값 모두 브라우저 코드나 Git에 넣지 않고 로컬
+`.env`와 Vercel 환경변수에만 저장합니다.
+
+## 오늘의 운세 예약 갱신
+
+`vercel.json`은 `/api/cron/daily-fortunes`를 매일 `00:00 UTC`, 즉 한국 시간 오전
+9시에 호출합니다. Vercel Cron은 프로덕션 배포에서만 동작합니다. 무료 요금제에서는
+같은 시간대 안에서 실행이 늦어질 수 있으며, 사용자가 `/today`를 열었을 때 빠진
+운세를 즉시 생성해 보완합니다.
+
 Google 로그인은 Supabase Dashboard의 Google Provider에서 활성화하고, 앱의 허용 Redirect URL에 `http://localhost:3000/auth/callback`을 추가합니다. Google Client Secret은 앱의 `.env`가 아니라 Supabase Dashboard에만 저장합니다.
+
+로컬 로그인은 `http://localhost:3000`을 기준 주소로 사용합니다. `127.0.0.1`로
+열어도 화면이 같은 `localhost` 주소로 자동 이동합니다. 로그인 콜백에서는 로컬
+개발 서버가 Supabase의 HTTPS 주소에 연결할 수 있어야 세션 교환이 완료됩니다.
 
 데이터베이스 구조와 사용자별 보안 정책은 `supabase/migrations/`에 있습니다. Supabase CLI 로그인 후 대상 프로젝트를 연결하고 마이그레이션을 적용합니다.
 

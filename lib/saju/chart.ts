@@ -236,3 +236,25 @@ export function calculate(raw: SajuInput): SajuChart {
     elementMethod: `천간과 지지의 대표 오행 ${pillars.length * 2}자를 센 값입니다. 지장간과 계절 가중치를 반영한 강약 판단은 아닙니다.`,
   };
 }
+
+export function calculateDayPillar(date: string): Pillar {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new InputError("운세 날짜를 확인해주세요.", "date");
+  }
+
+  const [year, month, day] = date.split("-").map(Number);
+  const check = new Date(Date.UTC(year, month - 1, day));
+  if (
+    check.getUTCFullYear() !== year ||
+    check.getUTCMonth() !== month - 1 ||
+    check.getUTCDate() !== day
+  ) {
+    throw new InputError("실제로 존재하는 운세 날짜를 입력해주세요.", "date");
+  }
+
+  const daily = Solar.fromYmdHms(year, month, day, 12, 0, 0)
+    .getLunar()
+    .getEightChar();
+  daily.setSect(1);
+  return pillar("오늘의 일주", daily.getDay());
+}

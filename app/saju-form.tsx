@@ -15,6 +15,9 @@ import {
 } from "../lib/saju/chart";
 import type { SajuReading } from "../lib/saju/reading";
 import type { SaveReadingRequest } from "../lib/saju/saved-reading";
+import { toReusedBirthInput } from "../lib/saju/reused-birth-input";
+import { buildCompatibleSajuProfile } from "../lib/saju/compatible-profile";
+import { useReusedBirthInput } from "./reused-birth-input-context";
 
 const topicDescriptions: Record<Topic, string> = {
   relationship: "연애와 가까운 관계가 궁금해요",
@@ -28,6 +31,7 @@ const topicDescriptions: Record<Topic, string> = {
 type SaveStatus = "idle" | "guest" | "saving" | "saved" | "error" | "auth";
 
 export default function SajuForm({ isAuthenticated }: { isAuthenticated: boolean }) {
+  const { reuseBirthInput } = useReusedBirthInput();
   const [chart, setChart] = useState<SajuChart | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
   const [submittedQuestion, setSubmittedQuestion] = useState("");
@@ -43,6 +47,7 @@ export default function SajuForm({ isAuthenticated }: { isAuthenticated: boolean
   const [savedId, setSavedId] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
   const resultRef = useRef<HTMLElement>(null);
+  const compatibleProfile = chart ? buildCompatibleSajuProfile(chart) : null;
 
   async function saveResult(payload: SaveReadingRequest) {
     setSaveStatus("saving");
@@ -86,6 +91,7 @@ export default function SajuForm({ isAuthenticated }: { isAuthenticated: boolean
 
     try {
       const localChart = calculate(input);
+      reuseBirthInput(toReusedBirthInput(input));
       setChart(localChart);
       setSelectedTopic(input.topic);
       setSubmittedQuestion(input.question?.trim() || "");
@@ -363,6 +369,51 @@ export default function SajuForm({ isAuthenticated }: { isAuthenticated: boolean
               <span>{chart.dayMaster.character}</span>
             </p>
           </div>
+
+          {compatibleProfile && (
+            <section className="compatible-saju-section" aria-labelledby="compatible-saju-title">
+              <div className="compatible-saju-heading">
+                <p className="summary-label">관계의 조화 살펴보기</p>
+                <h3 id="compatible-saju-title">나와 잘 맞는 사주</h3>
+                <p>
+                  나의 중심 기운과 오행 분포를 기준으로, 서로 힘을 보태기 쉬운 사주의 특징을 정리했습니다.
+                </p>
+              </div>
+
+              <p className="compatible-elements-summary">
+                <strong>잘 맞는 오행</strong>
+                <span>{compatibleProfile.recommendations.map((item) => item.element).join(" · ")}</span>
+              </p>
+
+              <div className="compatible-saju-grid">
+                {compatibleProfile.recommendations.map((item) => (
+                  <article className="compatible-saju-card" key={item.label}>
+                    <span className="compatible-element" aria-label={`${item.element} 기운`}>
+                      {item.element}
+                    </span>
+                    <div>
+                      <p className="compatible-card-label">{item.label}</p>
+                      <h4>{item.dayMasters} 일간</h4>
+                      <p>{item.description}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+
+              <div className="harmony-branch-card">
+                <p className="compatible-card-label">일지로 보는 자연스러운 호흡</p>
+                <strong>
+                  나의 {compatibleProfile.harmony.myBranchKorean}(
+                  <span lang="zh-Hant">{compatibleProfile.harmony.myBranch}</span>)와
+                  {" "}{compatibleProfile.harmony.partnerBranchKorean}(
+                  <span lang="zh-Hant">{compatibleProfile.harmony.partnerBranch}</span>) 일지
+                </strong>
+                <p>전통적인 육합 관계로, 일상에서 서로의 리듬을 맞추기 쉬운 조합으로 봅니다.</p>
+              </div>
+
+              <p className="compatible-saju-note">{compatibleProfile.note}</p>
+            </section>
+          )}
 
           <div className="result-section">
             <h3>사주 {chart.pillars.length === 3 ? "세" : "네"} 기둥</h3>

@@ -13,3 +13,6 @@ Spec을 만들면 아래 목록에 파일명을 추가합니다. 구현과 검�
 - [ ] `005-two-person-compatibility.md`
 - [x] `006-joseon-book-visual-design.md`
 - [x] `007-similar-saju-finder.md`
+- [x] `008-reuse-birth-input.md`
+- [x] `009-compatible-saju-profile.md`
+- [ ] `010-daily-fortune-cron.md`

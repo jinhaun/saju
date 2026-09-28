@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
   MAX_BIRTH_DATE,
   MIN_BIRTH_DATE,
@@ -11,15 +11,29 @@ import {
   type CompatibilityPersonInput,
   type CompatibilityResult,
 } from "../lib/saju/compatibility";
+import { useReusedBirthInput } from "./reused-birth-input-context";
 
 type PersonFieldsProps = {
   id: "first" | "second";
   label: string;
+  date: string;
+  time: string;
   unknownTime: boolean;
+  onDateChange: (date: string) => void;
+  onTimeChange: (time: string) => void;
   onToggleUnknownTime: () => void;
 };
 
-function PersonFields({ id, label, unknownTime, onToggleUnknownTime }: PersonFieldsProps) {
+function PersonFields({
+  id,
+  label,
+  date,
+  time,
+  unknownTime,
+  onDateChange,
+  onTimeChange,
+  onToggleUnknownTime,
+}: PersonFieldsProps) {
   return (
     <fieldset className="person-card">
       <legend>{label}</legend>
@@ -32,6 +46,8 @@ function PersonFields({ id, label, unknownTime, onToggleUnknownTime }: PersonFie
             type="date"
             min={MIN_BIRTH_DATE}
             max={MAX_BIRTH_DATE}
+            value={date}
+            onChange={(event) => onDateChange(event.target.value)}
             required
           />
         </div>
@@ -54,6 +70,8 @@ function PersonFields({ id, label, unknownTime, onToggleUnknownTime }: PersonFie
             id={`${id}-time`}
             name={`${id}-time`}
             type="time"
+            value={time}
+            onChange={(event) => onTimeChange(event.target.value)}
             required={!unknownTime}
             disabled={unknownTime}
           />
@@ -69,11 +87,23 @@ function PersonFields({ id, label, unknownTime, onToggleUnknownTime }: PersonFie
 }
 
 export default function CompatibilityForm() {
+  const { reusedBirthInput } = useReusedBirthInput();
+  const [firstDate, setFirstDate] = useState("");
+  const [firstTime, setFirstTime] = useState("");
   const [firstUnknownTime, setFirstUnknownTime] = useState(false);
+  const [secondDate, setSecondDate] = useState("");
+  const [secondTime, setSecondTime] = useState("");
   const [secondUnknownTime, setSecondUnknownTime] = useState(false);
   const [result, setResult] = useState<CompatibilityResult | null>(null);
   const [error, setError] = useState("");
   const resultRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!reusedBirthInput) return;
+    setFirstDate(reusedBirthInput.date);
+    setFirstTime(reusedBirthInput.time);
+    setFirstUnknownTime(reusedBirthInput.unknownTime);
+  }, [reusedBirthInput]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -121,13 +151,21 @@ export default function CompatibilityForm() {
           <PersonFields
             id="first"
             label="나"
+            date={firstDate}
+            time={firstTime}
             unknownTime={firstUnknownTime}
+            onDateChange={setFirstDate}
+            onTimeChange={setFirstTime}
             onToggleUnknownTime={() => setFirstUnknownTime((value) => !value)}
           />
           <PersonFields
             id="second"
             label="상대방"
+            date={secondDate}
+            time={secondTime}
             unknownTime={secondUnknownTime}
+            onDateChange={setSecondDate}
+            onTimeChange={setSecondTime}
             onToggleUnknownTime={() => setSecondUnknownTime((value) => !value)}
           />
         </div>

@@ -17,6 +17,25 @@ function unauthorized() {
   );
 }
 
+async function saveFortuneProfile(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  input: ReturnType<typeof parseSaveReadingRequest>["input"],
+) {
+  const { error } = await supabase.from("saju_profiles").upsert(
+    {
+      user_id: userId,
+      birth_date: input.date,
+      birth_time: input.unknownTime ? null : input.time,
+      unknown_birth_time: input.unknownTime === true,
+      calendar: "solar",
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id" },
+  );
+  return error;
+}
+
 export async function POST(request: Request) {
   try {
     const user = await getAuthenticatedUser();
@@ -47,6 +66,18 @@ export async function POST(request: Request) {
       .single();
 
     if (!error && data) {
+      const profileError = await saveFortuneProfile(supabase, user.id, input);
+      if (profileError) {
+        console.error("Saving fortune profile failed:", profileError.code);
+        return NextResponse.json(
+          {
+            code: "PROFILE_SAVE_FAILED",
+            message:
+              "해석은 저장됐지만 오늘의 운세 기준 정보를 갱신하지 못했습니다. 저장만 다시 시도해 주세요.",
+          },
+          { status: 503 },
+        );
+      }
       return NextResponse.json(
         { id: String(data.id), createdAt: data.created_at, duplicate: false },
         { status: 201 },
@@ -61,6 +92,18 @@ export async function POST(request: Request) {
         .eq("user_id", user.id)
         .maybeSingle();
       if (!existingError && existing) {
+        const profileError = await saveFortuneProfile(supabase, user.id, input);
+        if (profileError) {
+          console.error("Saving fortune profile failed:", profileError.code);
+          return NextResponse.json(
+            {
+              code: "PROFILE_SAVE_FAILED",
+              message:
+                "저장된 해석은 찾았지만 오늘의 운세 기준 정보를 갱신하지 못했습니다. 다시 시도해 주세요.",
+            },
+            { status: 503 },
+          );
+        }
         return NextResponse.json({
           id: String(existing.id),
           createdAt: existing.created_at,

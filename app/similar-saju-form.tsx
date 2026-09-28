@@ -1,11 +1,12 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { MAX_BIRTH_DATE, MIN_BIRTH_DATE } from "../lib/saju/chart";
 import type {
   SimilarSajuMatch,
   SimilarSajuResult,
 } from "../lib/saju/similar";
+import { useReusedBirthInput } from "./reused-birth-input-context";
 
 function SimilarMatchCard({ match, rank }: { match: SimilarSajuMatch; rank: number }) {
   return (
@@ -48,11 +49,21 @@ function SimilarMatchCard({ match, rank }: { match: SimilarSajuMatch; rank: numb
 }
 
 export default function SimilarSajuForm() {
+  const { reusedBirthInput } = useReusedBirthInput();
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
   const [unknownTime, setUnknownTime] = useState(false);
   const [result, setResult] = useState<SimilarSajuResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const resultRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!reusedBirthInput) return;
+    setDate(reusedBirthInput.date);
+    setTime(reusedBirthInput.time);
+    setUnknownTime(reusedBirthInput.unknownTime);
+  }, [reusedBirthInput]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -115,6 +126,8 @@ export default function SimilarSajuForm() {
               type="date"
               min={MIN_BIRTH_DATE}
               max={MAX_BIRTH_DATE}
+              value={date}
+              onChange={(event) => setDate(event.target.value)}
               required
             />
           </div>
@@ -137,6 +150,8 @@ export default function SimilarSajuForm() {
               id="similar-time"
               name="similar-time"
               type="time"
+              value={time}
+              onChange={(event) => setTime(event.target.value)}
               required={!unknownTime}
               disabled={unknownTime}
             />

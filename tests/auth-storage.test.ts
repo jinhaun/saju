@@ -8,6 +8,11 @@ import {
 } from "../lib/saju/saved-reading";
 import type { SajuInput } from "../lib/saju/chart";
 import type { SajuReading } from "../lib/saju/reading";
+import {
+  canonicalizeLocalUrl,
+  classifyAuthExchangeFailure,
+  getAuthCallbackUrl,
+} from "../lib/supabase/auth-redirect";
 import { safeNextPath } from "../lib/supabase/redirect";
 
 const validInput: SajuInput = {
@@ -51,6 +56,50 @@ test("로그인 콜백은 내부 상대 경로만 허용한다", () => {
   assert.equal(safeNextPath("//outside.example/path"), "/");
   assert.equal(safeNextPath("javascript:alert(1)"), "/");
   assert.equal(safeNextPath(null), "/");
+});
+
+test("로컬 로그인 주소는 localhost로 통일한다", () => {
+  assert.equal(
+    canonicalizeLocalUrl("http://127.0.0.1:3000/today?preview=1").toString(),
+    "http://localhost:3000/today?preview=1",
+  );
+  assert.equal(
+    canonicalizeLocalUrl("http://localhost:3000/").toString(),
+    "http://localhost:3000/",
+  );
+});
+
+test("Google 로그인 콜백은 설정 주소를 우선하고 로컬 주소를 정규화한다", () => {
+  assert.equal(
+    getAuthCallbackUrl("http://127.0.0.1:3000"),
+    "http://localhost:3000/auth/callback?next=%2F",
+  );
+  assert.equal(
+    getAuthCallbackUrl(
+      "http://localhost:3000",
+      "https://saju.example.com/app/path",
+    ),
+    "https://saju.example.com/auth/callback?next=%2F",
+  );
+});
+
+test("로그인 세션 교환 실패 원인을 안전한 안내 코드로 바꾼다", () => {
+  assert.equal(
+    classifyAuthExchangeFailure({ message: "secret detail" }, false),
+    "missing-verifier",
+  );
+  assert.equal(
+    classifyAuthExchangeFailure({ code: "flow_state_expired" }, true),
+    "expired",
+  );
+  assert.equal(
+    classifyAuthExchangeFailure({ code: "bad_code_verifier" }, true),
+    "bad-verifier",
+  );
+  assert.equal(
+    classifyAuthExchangeFailure({ code: "flow_state_not_found" }, true),
+    "flow-state",
+  );
 });
 
 test("정상 저장 요청을 검사하고 허용된 입력만 반환한다", () => {
