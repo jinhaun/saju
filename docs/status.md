@@ -17,3 +17,4 @@ Spec을 만들면 아래 목록에 파일명을 추가합니다. 구현과 검�
 - [x] `009-compatible-saju-profile.md`
 - [ ] `010-daily-fortune-cron.md`
 - [x] `011-share-compatible-saju.md`
+- [x] `012-chapter-navigation.md`

@@ -35,7 +35,19 @@ const topicDescriptions: Record<Topic, string> = {
 type SaveStatus = "idle" | "guest" | "saving" | "saved" | "error" | "auth";
 type CompatibleShareStatus = "idle" | "preparing" | "saved" | "shared" | "cancelled" | "error";
 
-export default function SajuForm({ isAuthenticated }: { isAuthenticated: boolean }) {
+type SajuFormProps = {
+  isAuthenticated: boolean;
+  hideInput?: boolean;
+  showResult?: boolean;
+  resultView?: "reading" | "harmony";
+};
+
+export default function SajuForm({
+  isAuthenticated,
+  hideInput = false,
+  showResult = true,
+  resultView = "reading",
+}: SajuFormProps) {
   const { reuseBirthInput } = useReusedBirthInput();
   const [chart, setChart] = useState<SajuChart | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
@@ -254,7 +266,18 @@ export default function SajuForm({ isAuthenticated }: { isAuthenticated: boolean
   }
 
   return (
-    <section className="input-card" aria-labelledby="input-title">
+    <section
+      className={`input-card${hideInput ? " chapter-result-card" : ""}`}
+      aria-labelledby={hideInput ? undefined : "input-title"}
+      aria-label={
+        hideInput
+          ? resultView === "harmony"
+            ? "나와 잘 맞는 사주와 오행"
+            : "나의 사주 해석"
+          : undefined
+      }
+    >
+      <div className="saju-input-stage" hidden={hideInput}>
       <div className="section-heading">
         <h2 id="input-title">기본 정보와 고민을 알려주세요.</h2>
         <p className="form-intro">별표가 있는 항목은 필수입니다</p>
@@ -353,8 +376,9 @@ export default function SajuForm({ isAuthenticated }: { isAuthenticated: boolean
       <div className="feedback" aria-live="polite">
         {error && <p className="error" role="alert">{error}</p>}
       </div>
+      </div>
 
-      {chart && selectedTopic && (
+      {showResult && chart && selectedTopic && (
         <section className="result" aria-labelledby="result-title" ref={resultRef} tabIndex={-1}>
           <div className="result-heading">
             <div>
@@ -364,13 +388,13 @@ export default function SajuForm({ isAuthenticated }: { isAuthenticated: boolean
             <span className="topic-badge">{topicLabels[selectedTopic]}</span>
           </div>
 
-          <div className="concern-summary">
+          {resultView === "reading" && <div className="concern-summary">
             <p className="summary-label">선택한 고민</p>
             <strong>{topicLabels[selectedTopic]}</strong>
             {submittedQuestion && <p>“{submittedQuestion}”</p>}
-          </div>
+          </div>}
 
-          {isLoading && (
+          {resultView === "reading" && isLoading && (
             <div className="reading-status" role="status">
               <span className="loading-dot" aria-hidden="true" />
               <div>
@@ -380,7 +404,7 @@ export default function SajuForm({ isAuthenticated }: { isAuthenticated: boolean
             </div>
           )}
 
-          {readingError && !isLoading && (
+          {resultView === "reading" && readingError && !isLoading && (
             <div className="reading-error" role="alert">
               <strong>해석을 가져오지 못했어요.</strong>
               <p>{readingError}</p>
@@ -390,7 +414,7 @@ export default function SajuForm({ isAuthenticated }: { isAuthenticated: boolean
             </div>
           )}
 
-          {reading && !isLoading && (
+          {resultView === "reading" && reading && !isLoading && (
             <article className="reading" aria-labelledby="reading-title">
               <div className="reading-summary">
                 <p className="summary-label">한눈에 보는 해석</p>
@@ -420,7 +444,7 @@ export default function SajuForm({ isAuthenticated }: { isAuthenticated: boolean
             </article>
           )}
 
-          {reading && !isLoading && saveStatus !== "idle" && (
+          {resultView === "reading" && reading && !isLoading && saveStatus !== "idle" && (
             <div className={`save-panel save-${saveStatus}`} role="status" aria-atomic="true">
               {saveStatus === "guest" && (
                 <>
@@ -483,7 +507,7 @@ export default function SajuForm({ isAuthenticated }: { isAuthenticated: boolean
             </p>
           </div>
 
-          {compatibleProfile && (
+          {resultView === "harmony" && compatibleProfile && (
             <section className="compatible-saju-section" aria-labelledby="compatible-saju-title">
               <div className="compatible-saju-heading">
                 <p className="summary-label">관계의 조화 살펴보기</p>
@@ -554,7 +578,7 @@ export default function SajuForm({ isAuthenticated }: { isAuthenticated: boolean
             </section>
           )}
 
-          <div className="result-section">
+          {resultView === "reading" && <div className="result-section">
             <h3>사주 {chart.pillars.length === 3 ? "세" : "네"} 기둥</h3>
             <dl className="pillars">
               {chart.pillars.map((item) => (
@@ -565,9 +589,9 @@ export default function SajuForm({ isAuthenticated }: { isAuthenticated: boolean
                 </div>
               ))}
             </dl>
-          </div>
+          </div>}
 
-          <div className="result-section">
+          {resultView === "reading" && <div className="result-section">
             <h3>오행 분포</h3>
             <p className="section-description">
               {chart.pillars.length * 2}글자에 나타난 대표 오행의 개수입니다.
@@ -585,13 +609,13 @@ export default function SajuForm({ isAuthenticated }: { isAuthenticated: boolean
                 </div>
               ))}
             </div>
-          </div>
+          </div>}
 
-          <details className="calculation-note">
+          {resultView === "reading" && <details className="calculation-note">
             <summary>계산 기준 보기</summary>
             <p>{chart.method}</p>
             <p>{chart.elementMethod}</p>
-          </details>
+          </details>}
         </section>
       )}
     </section>

@@ -1,7 +1,5 @@
-import SajuForm from "./saju-form";
-import CompatibilityForm from "./compatibility-form";
-import SimilarSajuForm from "./similar-saju-form";
 import AuthControls from "./auth-controls";
+import ChapterExperience from "./chapter-experience";
 import { ReusedBirthInputProvider } from "./reused-birth-input-context";
 import { getAuthenticatedUser } from "../lib/supabase/auth";
 
@@ -39,10 +37,8 @@ export default async function Page() {
               <b>四柱</b>
             </aside>
           </header>
-          <SajuForm isAuthenticated={Boolean(user)} />
-          <SimilarSajuForm />
+          <ChapterExperience isAuthenticated={Boolean(user)} />
         </section>
-        <CompatibilityForm />
       </ReusedBirthInputProvider>
       <footer className="page-footer">
         <p>

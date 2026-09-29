@@ -83,14 +83,16 @@ test("궁합 폼은 나의 입력만 채우고 상대방 입력과 계산 결과
   assert.doesNotMatch(reuseEffect, /setResult|compareCompatibility|requestSubmit/);
 });
 
-test("공유 Provider가 세 입력 폼을 함께 감싼다", async () => {
-  const source = await readProjectFile("app/page.tsx");
-  const providerContents = source.match(
+test("공유 Provider가 장별 화면을 감싸고 장별 화면이 세 입력 폼을 유지한다", async () => {
+  const pageSource = await readProjectFile("app/page.tsx");
+  const chapterSource = await readProjectFile("app/chapter-experience.tsx");
+  const providerContents = pageSource.match(
     /<ReusedBirthInputProvider>([\s\S]*?)<\/ReusedBirthInputProvider>/,
   )?.[1];
 
   assert.ok(providerContents, "공유 입력 Provider가 있어야 합니다.");
-  assert.match(providerContents, /<SajuForm\b/);
-  assert.match(providerContents, /<SimilarSajuForm\b/);
-  assert.match(providerContents, /<CompatibilityForm\b/);
+  assert.match(providerContents, /<ChapterExperience\b/);
+  assert.match(chapterSource, /<SajuForm\b/);
+  assert.match(chapterSource, /<SimilarSajuForm\b/);
+  assert.match(chapterSource, /<CompatibilityForm\b/);
 });
